@@ -17,6 +17,12 @@ class Integrators_LSO:
         """Sample a random number at each call."""
         return np.random.normal(loc=0.0, scale=np.sqrt(self.dt))
     
+    #TODO Compound poisson process and check lambda value
+        
+    def dN(self):   
+        #generate Poissonian noise
+        Lambda = 5
+        return np.random.poisson(lam=np.sqrt(Lambda*self.dt))
     
     
     def EM_stepper(self,yn):
@@ -65,6 +71,21 @@ class Integrators_LSO:
         return A@yn + alpha*b*self.dW()
     
     
+    def INT_stepper(self,yn):
+        dt = self.dt
+        alpha = self.alpha
+        A = np.array([[np.cos(dt), np.sin(dt)],[-np.sin(dt), np.cos(dt)]])
+        b = np.array([np.sin(dt), np.cos(dt)])
+        return A@yn + alpha*b*self.dN()
+
+    def PC_stepper(self,yn):
+        dt = self.dt
+        alpha = self.alpha
+        A = np.array([[1 - dt**2, dt],[-dt, 1 - dt**2]])
+        b = np.array([dt,1])
+        return A@yn + alpha*b*self.dW()
+    
+    
     
     def evolve(self):
         #evolve up to final time
@@ -84,18 +105,25 @@ class Integrators_LSO:
             else:
                 sys.exit('theta = ' + str(self.theta)+' is not valid') #system exit 
         elif (self.met_name == 'EX'):
-            E  = []
             for n in range(0,ts):
                 y[:,n+1] = self.EX_stepper(y[:,n])
                 
         elif (self.met_name == 'SYM'):
             for n in range(0,ts):
                 y[:,n+1] = self.SYM_stepper(y[:,n])
+                
+        elif (self.met_name == 'INT'):
+            for n in range(0,ts):
+                y[:,n+1] = self.INT_stepper(y[:,n])
+                
+        elif (self.met_name == 'PC'):
+            for n in range(0,ts):
+                y[:,n+1] = self.PC_stepper(y[:,n])
         
         return y
         
     
     
     
-    #def visualize(self,):
+    #TODO def visualize(self,):
         #show solutions plot
