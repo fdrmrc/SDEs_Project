@@ -3,13 +3,14 @@ import matplotlib.pyplot as plt
 import sys
 
 class Integrators_LSO:
-    def __init__(self, met_name,dt,y0,alpha,theta,T):
+    def __init__(self, met_name,dt,y0,alpha,theta,T,lamb):
         self.met_name = met_name #just a string 
         self.dt = dt
         self.y0 = y0
         self.alpha = alpha #parameter in the stoch. oscillator equation
         self.theta = theta
         self.T = T #final time
+        self.lamb = lamb
     
     
     
@@ -17,12 +18,25 @@ class Integrators_LSO:
         """Sample a random number at each call."""
         return np.random.normal(loc=0.0, scale=np.sqrt(self.dt))
     
-    #TODO Compound poisson process and check lambda value
         
     def dN(self):   
         #generate Poissonian noise
-        Lambda = 5
+        Lambda = self.lamb
+        if Lambda <=0: sys.exit('Not valid intensity')
+        
         return np.random.poisson(lam=np.sqrt(Lambda*self.dt))
+    
+    def poissproc(self):
+        dt = self.dt
+        n = self.T/dt
+        N = np.zeros(int(n)+1)
+        N[0] = 0 #a.s.
+        for k in range(0,int(n)):
+            xk = np.random.poisson(lam=np.sqrt(self.lamb*dt))
+            N[k+1] = N[k] + xk
+        
+        return N
+            
     
     
     def EM_stepper(self,yn):
