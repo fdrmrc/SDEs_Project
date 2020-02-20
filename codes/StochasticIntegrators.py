@@ -3,15 +3,16 @@ import matplotlib.pyplot as plt
 import sys
 
 class Integrators_LSO:
-    def __init__(self, met_name,dt,y0,alpha,eta,theta,T,lamb):
+    def __init__(self, met_name,dt,y0,T,**kwargs):
         self.met_name = met_name #just a string 
         self.dt = dt
         self.y0 = y0
-        self.alpha = alpha #parameter in the stoch. oscillator equation
-        self.eta = eta #eta parameter poisson process 
-        self.theta = theta
+        self.alpha = kwargs.get('alpha') #parameter in the stoch. oscillator equation
+        self.eta = kwargs.get('eta') #eta parameter poisson process 
+        self.omega = kwargs.get('omega')
+        self.theta = kwargs.get('theta')
         self.T = T #final time
-        self.lamb = lamb
+        self.lamb = kwargs.get('lamb')
         
     
     
@@ -25,7 +26,7 @@ class Integrators_LSO:
         Lambda = self.lamb
         if Lambda <=0: sys.exit('Not valid intensity')
         
-        return np.random.poisson(lam=np.sqrt(Lambda*self.dt))
+        return np.random.poisson(lam=Lambda*self.dt)
     
     def poissproc(self):
         dt = self.dt
@@ -33,7 +34,7 @@ class Integrators_LSO:
         N = np.zeros(int(n)+1)
         N[0] = 0 #a.s.
         for k in range(0,int(n)):
-            xk = np.random.poisson(lam=np.sqrt(self.lamb*dt))
+            xk = np.random.poisson(lam=self.lamb*dt)
             N[k+1] = N[k] + xk
         
         return N
@@ -122,10 +123,11 @@ class Integrators_LSO:
         dt = self.dt
         alpha = self.alpha
         eta = self.eta
-        A = np.array([[np.cos(dt), np.sin(dt)],[-np.sin(dt), np.cos(dt)]])
-        b = np.array([np.sin(dt),np.cos(dt)])
-        c = np.array([np.sin(dt),np.cos(dt)])
-        return A@yn + alpha*b*self.dW()+eta*c*self.dN()
+        w = self.omega
+        A = np.array([[np.cos(w*dt), (1/w)*np.sin(w*dt)],[-w*np.sin(w*dt), np.cos(w*dt)]])
+        b = np.array([(1/w)*np.sin(w*dt),np.cos(w*dt)])
+        c = np.array([(1/w)*np.sin(w*dt),np.cos(w*dt)])
+        return A@yn + alpha*b*self.dW() + eta*c*self.dN()
     
     def evolve(self):
         #evolve up to final time
