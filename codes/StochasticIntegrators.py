@@ -119,6 +119,17 @@ class Integrators_LSO:
         return A@yn + alpha*b*self.dW()
     
     
+    def IMP_stepper(self, yn):
+        dt = self.dt
+        alpha = self.alpha
+        eta = self.eta
+        w = self.omega
+        A = np.eye(2) - dt*np.array([[0, 1],[-w**2,0]])
+        b= yn + np.array([0,alpha])*self.dW() + np.array([0,eta])*self.dN()
+        return np.linalg.solve(A,b)
+        
+    
+    
     def TRIG_stepper(self,yn):
         dt = self.dt
         alpha = self.alpha
@@ -164,6 +175,10 @@ class Integrators_LSO:
         elif (self.met_name == 'TRIG'):
             for n in range(0,ts):
                 y[:,n+1] = self.TRIG_stepper(y[:,n])
+        elif (self.met_name == 'IMP'):
+            for n in range(0,ts):
+                y[:,n+1] = self.IMP_stepper(y[:,n])
+        
         
         return y
         
